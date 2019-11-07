@@ -2,13 +2,17 @@
 #
 # Check https://circleci.com/docs/2.0/language-python/ for more details
 #
-version: 2
+version: 2.1
 jobs:
-  build:
+  test:
+    parameters:
+      version:
+        type: string
+        default: latest
     docker:
       # specify the version you desire here
       # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
-      - image: circleci/python:3.7.1
+      - image: circleci/python:<< parameters.version >>
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -20,26 +24,80 @@ jobs:
     steps:
       - checkout
 
+      - run:
+          name:
+          command: |
+            sudo pip3 install --upgrade pip
+            sudo pip3 install pipenv
+            pipenv lock
+
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "Pipfile.lock" }}
+            - venv-<< parameters.version >>-{{ checksum "Pipfile.lock" }}
             # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
+            - venv-<< parameters.version >>-
 
       - run:
           name: install dependencies
           command: |
-            pip3 install --upgrade pip
-            pip3 install pipenv
-            pipenv install
+            PIPENV_VENV_IN_PROJECT="enabled" pipenv install --dev
 
       - save_cache:
           paths:
-            - {{pipenv --venv}}
-          key: v1-dependencies-{{ checksum "Pipfile.lock" }}
+            - ./.venv
+          key: venv-<< parameters.version >>-{{ checksum "Pipfile.lock" }}
 
       - run:
           name: run tests
           command: |
             pipenv run pytest
+
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
+
+  deploy:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          name: install python dependencies
+          command: |
+            sudo pip3 install --upgrade pip
+            sudo pip3 install pipenv
+            PIPENV_VENV_IN_PROJECT="enabled" pipenv install --dev
+      - run:
+          name: create package
+          command: |
+            ./.venv/bin/activate
+            python setup.py sdist bdist_wheel
+
+      - run:
+          name: create package
+          command: |
+            ./.venv/bin/activate
+            twine upload --repository testpypi dist/*
+
+
+workflows:
+ tests:
+   jobs:
+     - test:
+         name: "test-3.5"
+         version: "3.5"
+     - test:
+         name: "test-3.6"
+         version: "3.6"
+     - test:
+         name: "test-3.7"
+         version: "3.7"
+     - deploy:
+         requires:
+           - test-3.7
+         filters:
+           tags:
+             only: /[0-9]+(\.[0-9]+)*/
+           branches:
+             ignore: /.*/
