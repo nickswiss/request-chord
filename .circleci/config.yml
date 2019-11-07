@@ -52,22 +52,24 @@ jobs:
       - image: circleci/python:3.7
     steps:
       - checkout
+
       - run:
           name: install python dependencies
           command: |
             sudo pip3 install --upgrade pip
             sudo pip3 install pipenv
             PIPENV_VENV_IN_PROJECT="enabled" pipenv install --dev
-      - run:
-          name: create package
-          command: |
-            ./.venv/bin/activate
-            python setup.py sdist bdist_wheel
 
       - run:
           name: create package
           command: |
-            ./.venv/bin/activate
+            source ./.venv/bin/activate
+            python setup.py sdist bdist_wheel
+
+      - run:
+          name: upload to pypi
+          command: |
+            source ./.venv/bin/activate
             twine upload --repository testpypi dist/*
 
 
@@ -86,8 +88,6 @@ workflows:
      - deploy:
          requires:
            - test-3.7
-#         filters:
-#           tags:
-#             only: /[0-9]+(\.[0-9]+)*/
-#           branches:
-#             ignore: /.*/
+         filters:
+           tags:
+             only: /[0-9]+(\.[0-9]+)(\.[0-9]+)/
