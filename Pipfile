@@ -6,7 +6,7 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-request-chord = {index = "https://test.pypi.org/simple/",version = "*"}
+pytest = "*"
 
 [requires]
 python_version = "3.7"
