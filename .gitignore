@@ -6,3 +6,4 @@ venv
 __pycache__
 *.pyc
 .pytest_cache
+Pipfile.lock    # as python packages require testing across many versions, not pushing lock
