@@ -4,9 +4,8 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pytest = "*"
+twine = "*"
 
 [packages]
-request-chord = {index = "https://test.pypi.org/simple/",version = "*"}
 
-[requires]
-python_version = "3.7"
