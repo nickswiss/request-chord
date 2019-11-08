@@ -81,7 +81,7 @@ jobs:
           name: upload to pypi
           command: |
             source ./.venv/bin/activate
-            twine upload --repository testpypi dist/*
+            twine upload --repository testpypi dist/* -u nickswiss -p $PYPI_PASSWORD
 
 
 workflows:
